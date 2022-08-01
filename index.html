@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Agri Controller</title>
+
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"></link>
+    <link rel="stylesheet" type="text/css" href="style.css"></link>
+
+  </head>
+  <body>
+    <H2>Message: <span id="msg_received"></span></H2><br>
+    <H2>Status: <span id="status_valve"></span></H2>
+
+    <label for="mins">Minutes:</label>
+    <input type="number" id="mins" name="mins"><br><br>
+    <label for="secs">Seconds:</label>
+    <input type="number" id="secs" name="secs"><br><br>
+
+    <button type="button" id="send_value" onclick="send_value()">Submit</button><br><br>
+    <button type="button" id="send_value" onclick="close_value()">Close Valve</button>
+
+
+    <script>
+      let socket = new WebSocket("ws://192.168.0.10:3000/?guid=860ad40c-310f-4704-8f66-7f1d407fd60c");
+      //NEED TO REQUEST GUID!!!
+
+      socket.onopen = function(e) {
+          //document.getElementById("dash-loading-status").innerHTML = "Getting Data, please wait...";
+          socket.send("{\"Sender\":\"860ad40c-310f-4704-8f66-7f1d407fd60c\",\"Destination\":\"c17e99c6-e5c9-4488-9742-6a072f3743f6\",\"Type\":\"REQ\",\"Instruction\":\"REQUEST_NODE_STATUS\",\"Data\":\"NA\"}");
+          //setTimeout(function(){
+              //socket.send("REQUEST_RF_DATA");
+          //}, 1000);
+      };
+
+      socket.onmessage = function(event) {
+          //console.log(`Data received: ${event.data}`);
+          document.getElementById("msg_received").innerHTML = event.Data;
+
+          jsonObj = JSON.parse(event.data);
+
+          document.getElementById("status_valve").innerHTML = jsonObj.Data;
+      };
+
+      socket.onclose = function(event) {
+          alert('[close] Connection closed');
+      };
+
+      socket.onerror = function(error) {
+          alert(`[error] ${error.message}`);
+      };
+
+      function send_value(){
+        let val = 0;
+        val = Number(document.getElementById("mins").value * 60) + Number(document.getElementById("secs").value);
+
+        socket.send(`{\"Sender\":\"860ad40c-310f-4704-8f66-7f1d407fd60c\",\"Destination\":\"c17e99c6-e5c9-4488-9742-6a072f3743f6\",\"Type\":\"REQ\",\"Instruction\":\"SET_VLV_OPEN_TIME\",\"Data\":\"${val}\"}`);
+      }
+
+      function close_value(){
+        socket.send(`{\"Sender\":\"860ad40c-310f-4704-8f66-7f1d407fd60c\",\"Destination\":\"c17e99c6-e5c9-4488-9742-6a072f3743f6\",\"Type\":\"REQ\",\"Instruction\":\"CLOSE_VLV\",\"Data\":\"NA\"}`);
+      }
+    </script>
+
+  </body>
+</html>
